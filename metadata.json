@@ -1,0 +1,6 @@
+{
+  "name": "PulVault",
+  "description": "Secure client-side end-to-end encrypted password manager for corporate creditial management using Web Crypto API AES-GCM.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
