@@ -710,6 +710,7 @@ export default function App() {
                   profileName={profileName}
                   profilePhoto={profilePhoto}
                   onSaveProfile={handleSaveProfile}
+                  lang={lang}
                 />
               )}
             </div>
