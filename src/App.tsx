@@ -688,6 +688,7 @@ export default function App() {
                   credentials={credentials}
                   onEdit={handleEditTrigger}
                   showToast={showToast}
+                  lang={lang}
                 />
               )}
 
