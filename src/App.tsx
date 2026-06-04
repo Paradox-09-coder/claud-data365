@@ -693,7 +693,7 @@ export default function App() {
               )}
 
               {activeTab === 'activity' && (
-                <ActivityLogView logs={activityLogs} />
+               <ActivityLogView logs={activityLogs} lang={lang} />
               )}
 
               {activeTab === 'settings' && (
