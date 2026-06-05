@@ -53,26 +53,26 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void 
 
   const config = {
     success: {
-      bg: 'bg-slate-900/95 border-emerald-500/30',
-      text: 'text-slate-100',
+      bg: 'bg-slate-900 border-emerald-500/30',
+      text: 'text-white',
       icon: <CheckCircle size={18} className="text-emerald-400" />,
       stripe: 'bg-emerald-500'
     },
     error: {
-      bg: 'bg-slate-900/95 border-rose-500/30',
-      text: 'text-slate-100',
+      bg: 'bg-slate-900 border-rose-500/30',
+      text: 'text-white',
       icon: <AlertOctagon size={18} className="text-rose-400" />,
       stripe: 'bg-rose-500'
     },
     warning: {
-      bg: 'bg-slate-900/95 border-amber-500/30',
-      text: 'text-slate-100',
+      bg: 'bg-slate-900 border-amber-500/30',
+      text: 'text-white',
       icon: <AlertTriangle size={18} className="text-amber-400" />,
       stripe: 'bg-amber-500'
     },
     info: {
-      bg: 'bg-slate-900/95 border-indigo-500/30',
-      text: 'text-slate-100',
+      bg: 'bg-slate-900 border-indigo-500/30',
+      text: 'text-white',
       icon: <Info size={18} className="text-indigo-400" />,
       stripe: 'bg-indigo-500'
     }

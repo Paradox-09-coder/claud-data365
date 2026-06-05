@@ -14,6 +14,7 @@ interface SidebarProps {
   profilePhoto: string | null;
   lang: LanguageType;
   onToggleLang: (lang: LanguageType) => void;
+  lockCountdown: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -120,26 +121,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </ul>
       </nav>
 
-      {/* Safe Storage Feedback Banner matching Image 3 */}
-      <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-850 bg-[#090d16]/30 mb-5">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400/90 flex-shrink-0 shadow-lg shadow-emerald-500/5">
-            <Lock size={18} className="fill-emerald-400/5 text-emerald-400" />
+      {/* Safe Storage Feedback Banner + Auto-lock countdown */}
+      <div className="flex flex-col gap-2 mb-5">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-850 bg-[#090d16]/30">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400/90 flex-shrink-0 shadow-lg shadow-emerald-500/5">
+              <Lock size={18} className="fill-emerald-400/5 text-emerald-400" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold font-sans text-emerald-400 tracking-wide leading-none truncate">{t.storageEncrypted}</span>
+              <span className="text-[10px] text-slate-450 font-medium tracking-wide leading-none mt-1 truncate">{t.aesEnabled}</span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold font-sans text-emerald-400 tracking-wide leading-none truncate">{t.storageEncrypted}</span>
-            <span className="text-[10px] text-slate-450 font-medium tracking-wide leading-none mt-1 truncate">{t.aesEnabled}</span>
-          </div>
+          <button
+            onClick={onLock}
+            title={t.secureLockout}
+            className="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/15 hover:border-rose-500/40 text-rose-400 hover:text-rose-350 rounded-lg transition-all duration-150 flex items-center justify-center cursor-pointer select-none flex-shrink-0"
+          >
+            <Lock size={14} />
+          </button>
         </div>
-        
-        {/* Lock button nested in the green storage banner */}
-        <button
-          onClick={onLock}
-          title={t.secureLockout}
-          className="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/15 hover:border-rose-500/40 text-rose-400 hover:text-rose-350 rounded-lg transition-all duration-150 flex items-center justify-center cursor-pointer select-none flex-shrink-0"
-        >
-          <Lock size={14} />
-        </button>
+        {/* Auto-lock countdown timer */}
+        <div className="px-3 py-2 rounded-lg border border-slate-800/60 bg-slate-900/40 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShieldAlert size={13} className={lockCountdown <= 30 ? 'text-rose-400 animate-pulse' : 'text-slate-500'} />
+            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">
+              {lang === 'uz' ? 'Avtoquflash' : 'Auto-lock'}
+            </span>
+          </div>
+          <span className={`text-xs font-mono font-bold tabular-nums ${
+            lockCountdown <= 30 ? 'text-rose-400' : lockCountdown <= 60 ? 'text-amber-400' : 'text-slate-400'
+          }`}>
+            {Math.floor(lockCountdown / 60)}:{String(lockCountdown % 60).padStart(2, '0')}
+          </span>
+        </div>
       </div>
 
     </aside>

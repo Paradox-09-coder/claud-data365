@@ -62,6 +62,8 @@ export default function App() {
   // Safety device timeouts: default 5 minutes
   const [autoLockTimeout, setAutoLockTimeout] = useState(300000);
   const lockTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [lockCountdown, setLockCountdown] = useState(300);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const getVaultStorageKey = (name: string) => `aegis_vault_secure_store_${name.replace(/\s+/g, '_')}`;
 
@@ -260,9 +262,16 @@ export default function App() {
   // Auto-lock devices trackers
   const resetAutoLockTimer = () => {
     if (isLocked) return;
-    if (lockTimerRef.current) {
-      clearTimeout(lockTimerRef.current);
-    }
+    if (lockTimerRef.current) clearTimeout(lockTimerRef.current);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    const seconds = Math.floor(autoLockTimeout / 1000);
+    setLockCountdown(seconds);
+    countdownIntervalRef.current = setInterval(() => {
+      setLockCountdown(prev => {
+        if (prev <= 1) { clearInterval(countdownIntervalRef.current!); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
     lockTimerRef.current = setTimeout(() => {
       handleLock();
     }, autoLockTimeout);
@@ -524,6 +533,7 @@ export default function App() {
               profilePhoto={profilePhoto}
               lang={lang}
               onToggleLang={handleToggleLang}
+              lockCountdown={lockCountdown}
             />
           </div>
 
@@ -554,6 +564,7 @@ export default function App() {
                   profilePhoto={profilePhoto}
                   lang={lang}
                   onToggleLang={handleToggleLang}
+                  lockCountdown={lockCountdown}
                 />
               </div>
             </div>
@@ -693,7 +704,11 @@ export default function App() {
               )}
 
               {activeTab === 'activity' && (
+<<<<<<< HEAD
                <ActivityLogView logs={activityLogs} lang={lang} />
+=======
+                <ActivityLogView logs={activityLogs} lang={lang} />
+>>>>>>> cf04dff (updated)
               )}
 
               {activeTab === 'settings' && (

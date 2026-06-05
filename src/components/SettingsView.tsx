@@ -1,7 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
 import { SettingsSubTabType, CredentialType } from '../types';
 import { Shield, FileDown, FileUp, KeyRound, AlertTriangle, ShieldCheck, User2, Lock, Sliders, Camera, UploadCloud, Send, Mail, CheckCircle } from 'lucide-react';
 import { LanguageType, translations } from '../translations';
+
+// EmailJS config - replace with your own keys from emailjs.com (free)
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+
+const sendOtpEmail = async (toEmail: string, code: string): Promise<boolean> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    return false; // fallback to mock mode
+  }
+  try {
+    await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      { to_email: toEmail, otp_code: code, app_name: 'PulVault' },
+      EMAILJS_PUBLIC_KEY
+    );
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 interface SettingsViewProps {
   selectedVault: string;
@@ -433,15 +456,21 @@ export const SettingsSettingsSubTabs: React.FC<SettingsViewProps> = ({
                   {!verificationCode ? (
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         const code = Math.floor(100000 + Math.random() * 900000).toString();
                         setVerificationCode(code);
-                        if (lang === 'uz') {
-                          setSentCodeAlert(`[Pochta Interseptori]: Tasdiqlash OTP kodi yuborildi. Kod: ${code}`);
-                          showToast(`Tasdiqlash kodi: ${code}. Uni nusxalang va kiriting!`, 'success');
+                        const sent = await sendOtpEmail(vaultEmail, code);
+                        if (sent) {
+                          setSentCodeAlert(null);
+                          showToast(lang === 'uz' ? `Tasdiqlash kodi ${vaultEmail} ga yuborildi!` : `Verification code sent to ${vaultEmail}!`, 'success');
                         } else {
-                          setSentCodeAlert(`[Mail Interceptor]: Authorization OTP dispatched safely. Code: ${code}`);
-                          showToast(`Verification key sent! Code: ${code}`, 'success');
+                          if (lang === 'uz') {
+                            setSentCodeAlert(`[Simulyator]: Tasdiqlash kodi: ${code}`);
+                            showToast(`Kod simulyatorda: ${code}`, 'info');
+                          } else {
+                            setSentCodeAlert(`[Simulator]: Verification code: ${code}`);
+                            showToast(`Code in simulator: ${code}`, 'info');
+                          }
                         }
                       }}
                       className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
@@ -464,15 +493,20 @@ export const SettingsSettingsSubTabs: React.FC<SettingsViewProps> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const code = Math.floor(100000 + Math.random() * 900000).toString();
                           setVerificationCode(code);
-                          if (lang === 'uz') {
-                            setSentCodeAlert(`[Pochta Interseptori]: Tasdiqlash yangi OTP kodi yuborildi. Kod: ${code}`);
-                            showToast(`Yangi kod: ${code}. Uni nusxalang va kiriting!`, 'success');
+                          const sent = await sendOtpEmail(vaultEmail, code);
+                          if (sent) {
+                            setSentCodeAlert(null);
+                            showToast(lang === 'uz' ? `Yangi kod ${vaultEmail} ga yuborildi!` : `New code sent to ${vaultEmail}!`, 'success');
                           } else {
-                            setSentCodeAlert(`[Mail Interceptor]: Authorization OTP dispatched safely. Code: ${code}`);
-                            showToast(`New verification key dispatched! Code: ${code}`, 'success');
+                            if (lang === 'uz') {
+                              setSentCodeAlert(`[Simulyator]: Yangi kod: ${code}`);
+                            } else {
+                              setSentCodeAlert(`[Simulator]: New code: ${code}`);
+                            }
+                            showToast(lang === 'uz' ? `Yangi kod: ${code}` : `New code: ${code}`, 'info');
                           }
                         }}
                         className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer self-start"

@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
+
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+
+const sendOtpEmail = async (toEmail: string, code: string): Promise<boolean> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) return false;
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, 
+      { to_email: toEmail, otp_code: code, app_name: 'PulVault' }, EMAILJS_PUBLIC_KEY);
+    return true;
+  } catch { return false; }
+};
 import { Shield, Lock, Eye, EyeOff, Plus, HelpCircle, Loader2, Send, CheckCircle, Mail, AlertTriangle } from 'lucide-react';
 import { decryptData, encryptData } from '../crypto';
 import { generateUUID } from '../utils';
@@ -33,12 +47,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({
 
   // New onboarding email state
   const [onboardingEmail, setOnboardingEmail] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'user' | 'guest'>('user');
 
   // New vault creation states
   const [newVaultName, setNewVaultName] = useState('');
   const [newVaultEmail, setNewVaultEmail] = useState('');
   const [newVaultPass, setNewVaultPass] = useState('');
   const [newVaultPassConfirm, setNewVaultPassConfirm] = useState('');
+  const [newVaultRole, setNewVaultRole] = useState<'admin' | 'user' | 'guest'>('user');
 
   // Forgot password password recovery flow modal states
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
@@ -80,6 +96,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
         }
 
         await onInitialize(password, selectedVault, onboardingEmail.trim());
+        localStorage.setItem(`aegis_vault_role_${selectedVault.replace(/\s+/g, '_')}`, selectedRole);
         showToast(`Vault "${selectedVault}" initialized successfully!`, 'success');
       } else {
         const success = await onUnlock(password, selectedVault);
@@ -130,6 +147,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
 
       setSelectedVault(cleanName);
       await onInitialize(newVaultPass, cleanName, newVaultEmail.trim());
+      localStorage.setItem(`aegis_vault_role_${cleanName.replace(/\s+/g, '_')}`, newVaultRole);
 
       // Clean up fields
       setNewVaultName('');
@@ -147,14 +165,13 @@ export const LockScreen: React.FC<LockScreenProps> = ({
   };
 
   // Password Recovery Reset Handlers
-  const handleSendRecoveryCode = () => {
+  const handleSendRecoveryCode = async () => {
     const cleanEmail = recoveryEmail.trim();
     if (!cleanEmail) {
       showToast('Please enter your email!', 'error');
       return;
     }
 
-    // Load registered email corresponding to current vault
     const emailKey = `aegis_vault_email_${selectedVault.replace(/\s+/g, '_')}`;
     const registeredEmail = localStorage.getItem(emailKey);
 
@@ -163,12 +180,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({
       return;
     }
 
-    // Generate neat random 6-digit recovery verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
-    setVerificationCodeMockDelivery(code);
     setVerificationSent(true);
-    showToast('Secure recovery verification code sent with success.', 'success');
+
+    const sent = await sendOtpEmail(cleanEmail, code);
+    if (sent) {
+      setShowMockDeliveryAlert(null);
+      showToast(`Verification code sent to ${cleanEmail}!`, 'success');
+    } else {
+      setVerificationCodeMockDelivery(code);
+      showToast(`Code (simulator): ${code}`, 'info');
+    }
   };
 
   // Helper alert that acts as our beautiful simulation delivery system
@@ -373,17 +396,43 @@ export const LockScreen: React.FC<LockScreenProps> = ({
 
               {/* Onboarding Registered Email field */}
               {isOnboarding && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400 font-sans uppercase tracking-wider">Registered Email Address</label>
-                  <input
-                    type="email"
-                    value={onboardingEmail}
-                    onChange={(e) => setOnboardingEmail(e.target.value)}
-                    placeholder="e.g. notuzbekistan1@gmail.com"
-                    required
-                    className="w-full bg-slate-950/80 border border-slate-800/80 rounded-lg text-slate-200 text-sm py-2.5 px-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-sans transition-all font-medium"
-                  />
-                </div>
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-400 font-sans uppercase tracking-wider">Registered Email Address</label>
+                    <input
+                      type="email"
+                      value={onboardingEmail}
+                      onChange={(e) => setOnboardingEmail(e.target.value)}
+                      placeholder="e.g. notuzbekistan1@gmail.com"
+                      required
+                      className="w-full bg-slate-950/80 border border-slate-800/80 rounded-lg text-slate-200 text-sm py-2.5 px-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-sans transition-all font-medium"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-400 font-sans uppercase tracking-wider">Role</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['admin', 'user', 'guest'] as const).map((role) => (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setSelectedRole(role)}
+                          className={`py-2 rounded-lg text-xs font-bold border transition-all cursor-pointer capitalize ${
+                            selectedRole === role
+                              ? role === 'admin' ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' 
+                              : role === 'user' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
+                              : 'bg-slate-500/20 border-slate-500/50 text-slate-300'
+                              : 'bg-slate-950/50 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          {role === 'admin' ? '👑 Admin' : role === 'user' ? '👤 User' : '👻 Guest'}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-500">
+                      {selectedRole === 'admin' ? 'Full access to all vault features' : selectedRole === 'user' ? 'Standard access to vault records' : 'Read-only, limited access'}
+                    </p>
+                  </div>
+                </>
               )}
 
               {/* Master Password inputs */}
@@ -509,6 +558,28 @@ export const LockScreen: React.FC<LockScreenProps> = ({
                   required
                   className="w-full bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm py-2.5 px-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-sans transition-all font-medium"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Role</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['admin', 'user', 'guest'] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setNewVaultRole(role)}
+                      className={`py-2 rounded-lg text-xs font-bold border transition-all cursor-pointer capitalize ${
+                        newVaultRole === role
+                          ? role === 'admin' ? 'bg-rose-500/20 border-rose-500/50 text-rose-300'
+                          : role === 'user' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
+                          : 'bg-slate-500/20 border-slate-500/50 text-slate-300'
+                          : 'bg-slate-950/50 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      {role === 'admin' ? '👑 Admin' : role === 'user' ? '👤 User' : '👻 Guest'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
