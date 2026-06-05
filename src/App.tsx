@@ -705,8 +705,7 @@ export default function App() {
 
               {activeTab === 'activity' && (
 
-               <ActivityLogView logs={activityLogs} lang={lang} />
-
+              
                 <ActivityLogView logs={activityLogs} lang={lang} />
 
               )}
