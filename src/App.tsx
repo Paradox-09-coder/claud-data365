@@ -704,11 +704,11 @@ export default function App() {
               )}
 
               {activeTab === 'activity' && (
-<<<<<<< HEAD
+
                <ActivityLogView logs={activityLogs} lang={lang} />
-=======
+
                 <ActivityLogView logs={activityLogs} lang={lang} />
->>>>>>> cf04dff (updated)
+
               )}
 
               {activeTab === 'settings' && (
